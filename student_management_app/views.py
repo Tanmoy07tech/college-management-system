@@ -2,6 +2,7 @@ from django.shortcuts import render,HttpResponse, redirect,HttpResponseRedirect
 from django.contrib.auth import logout, authenticate, login
 from .models import CustomUser, Staffs, Students, AdminHOD
 from django.contrib import messages
+from django.contrib.auth.hashers import make_password,check_password
 
 def home(request):
 	return render(request, 'home.html')
@@ -16,19 +17,31 @@ def loginUser(request):
 
 def doLogin(request):
 	
-	print("here")
 	email_id = request.GET.get('email')
+	
 	password = request.GET.get('password')
 	# user_type = request.GET.get('user_type')
 	print(email_id)
-	print(password)
+	print('Pssword=',password)
 	print(request.user)
 	if not (email_id and password):
 		messages.error(request, "Please provide all the details!!")
 		return render(request, 'login_page.html')
-
-	user = CustomUser.objects.filter(email=email_id, password=password).last()
+	all_entries=CustomUser.objects.all()
+	print(CustomUser.HOD)
+	print(all_entries)
+	
+	user = CustomUser.objects.filter(email=email_id).last()
+	
+	print('My pass=',password)
+	print('USer=',user)
+	
 	if not user:
+		messages.error(request, 'Invalid Login Credentials!!')
+		return render(request, 'login_page.html')
+	true_pass=check_password(password,user.password)
+
+	if user and true_pass==False:
 		messages.error(request, 'Invalid Login Credentials!!')
 		return render(request, 'login_page.html')
 
@@ -90,7 +103,7 @@ def doRegistration(request):
 	user = CustomUser()
 	user.username = username
 	user.email = email_id
-	user.password = password
+	user.password = make_password(password)
 	user.user_type = user_type
 	user.first_name = first_name
 	user.last_name = last_name
